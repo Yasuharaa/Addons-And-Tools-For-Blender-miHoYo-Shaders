@@ -49,7 +49,7 @@ class PGR_PT_Setup_Wizard_UI_Layout(Panel, PunishingGrayRavenUIRenderChecker):
         )
 
         expy_kit_installed = bpy.context.preferences.addons.get('Expy-Kit-main')
-        betterfbx_installed = bpy.context.preferences.addons.get('better_fbx')
+        betterfbx_installed = bpy.context.preferences.addons.get('better_fbx') or bpy.context.preferences.addons.get('bl_ext.user_default.better_fbx')
         rigify_installed = bpy.context.preferences.addons.get('rigify')
 
         if (not expy_kit_installed or not betterfbx_installed or not rigify_installed) and rigging_global_settings_feature_flag:
@@ -138,7 +138,7 @@ class PGR_PT_Basic_Setup_Wizard_UI_Layout(Panel, PunishingGrayRavenUIRenderCheck
             paint_helpers,
             'punishing_gray_raven.paint_vertex_erase_face_alpha',
             'Erase Face Alpha',
-            'BRUSH_DATA',
+            'GPBRUSH_ERASE_HARD',
             game_type=GameType.PUNISHING_GRAY_RAVEN.name,
         )
 
@@ -353,19 +353,12 @@ class OperatorFactory:
         operator_context='EXEC_DEFAULT',
         **kwargs
     ):
-        try:
-            ui_object.operator_context = operator_context
-            ui_object = ui_object.operator(
-                operator=operator,
-                text=text,
-                icon=icon,
-            )
-        except TypeError:  # Icon not found, possibly added/removed depending on Blender version
-            ui_object.operator_context = operator_context
-            ui_object = ui_object.operator(
-                operator=operator,
-                text=text,
-            )
+        ui_object.operator_context = operator_context
+        ui_object = ui_object.operator(
+            operator=operator,
+            text=text,
+            icon=icon,
+        )
 
         for key, value in kwargs.items():
             setattr(ui_object, key, value)

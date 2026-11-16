@@ -36,7 +36,6 @@ class UI_Properties:
             default = False
         )
 
-
 class GI_PT_Setup_Wizard_UI_Layout(Panel, GenshinImpactUIRenderChecker):
     bl_label = "Genshin Impact Setup Wizard"
     bl_idname = "GI_PT_Setup_Wizard_UI_Layout"
@@ -416,19 +415,12 @@ class OperatorFactory:
         operator_context='EXEC_DEFAULT',
         **kwargs
     ):
-        try:
-            ui_object.operator_context = operator_context
-            ui_object = ui_object.operator(
-                operator=operator,
-                text=text,
-                icon=icon,
-            )
-        except TypeError:  # Icon not found, possibly added/removed depending on Blender version
-            ui_object.operator_context = operator_context
-            ui_object = ui_object.operator(
-                operator=operator,
-                text=text,
-            )
+        ui_object.operator_context = operator_context
+        ui_object = ui_object.operator(
+            operator=operator,
+            text=text,
+            icon=icon,
+        )
 
         for key, value in kwargs.items():
             setattr(ui_object, key, value)

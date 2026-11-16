@@ -86,7 +86,7 @@ class GI_OT_Emissive_Optimizer(Operator, CustomOperatorProperties):
             [modifier for modifier in mesh.modifiers.values() if OUTLINES_KEYWORD_IDENTIFIER in modifier.name]
         if outlines_modifiers:
             outlines_modifiers[0].show_viewport = enabled
-
+            
     def __set_selected_objects(self, selected_objects):
         bpy.ops.object.select_all(action='DESELECT')
         for selected_object in selected_objects:

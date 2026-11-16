@@ -59,7 +59,7 @@ class GI_OT_GenshinImportModel(Operator, ImportHelper, CustomOperatorProperties)
     use_auto_bone_orientation: BoolProperty(
         name="Automatic Bone Orientation",
         description="Automatically sort bones orientations, if you want to preserve the original armature, please disable the option",
-        default=True,
+        default=False,
     )
 
     def draw(self, context):
@@ -69,8 +69,6 @@ class GI_OT_GenshinImportModel(Operator, ImportHelper, CustomOperatorProperties)
         box.prop(self, 'use_auto_bone_orientation')
 
     def execute(self, context):
-        self.clean_up_scene()
-
         is_character_model_file = not os.path.isdir(self.filepath) and self.filepath
         character_model_directory = os.path.dirname(self.filepath) or self.file_directory
         character_model_file_path_or_directory = self.filepath if is_character_model_file else \
@@ -117,28 +115,20 @@ class GI_OT_GenshinImportModel(Operator, ImportHelper, CustomOperatorProperties)
             super().clear_custom_properties()
         return {'FINISHED'}
 
-    '''
-        We need to clean up the scene to ensure no other objects will interfere the setup.
-        Flins has a Light mesh which creates a Light.001 on character import and causes issues later in the setup.
-    '''
-    def clean_up_scene(self):
-        OBJECTS_TO_CLEAN_UP = [
-            'Cube',
-            'Light',
-        ]
-        for obj in bpy.data.objects:
-            if obj.name in OBJECTS_TO_CLEAN_UP:
-                bpy.data.objects.remove(obj)
-
     def import_character_model(self, character_model_file_path_or_directory, is_character_model_file):
         character_model_file_path = character_model_file_path_or_directory if is_character_model_file else \
             self.__find_fbx_file(character_model_file_path_or_directory)
-        betterfbx_installed = bpy.context.preferences.addons.get('better_fbx')
+        betterfbx_installed = bpy.context.preferences.addons.get('better_fbx') or bpy.context.preferences.addons.get('bl_ext.user_default.better_fbx')
         # Honkai Star Rail requires BetterFBX. We should always use it for HSR Character Import
         betterfbx_enabled = True if self.game_type == GameType.HONKAI_STAR_RAIL.name else \
             bpy.context.window_manager.setup_wizard_betterfbx_enabled if betterfbx_installed else False
 
         if betterfbx_installed and betterfbx_enabled:
+            # bpy.ops.better_import.fbx(
+            #     'EXEC_DEFAULT',
+            #     filepath=character_model_file_path,
+            #     use_auto_bone_orientation=self.use_auto_bone_orientation,
+            # )
             betterfbx_kwargs = {
                 'filepath': character_model_file_path,
                 'files': [{'name': os.path.basename(character_model_file_path)}],  # needed after upgrading BetterFBX to 6.3
@@ -154,7 +144,7 @@ class GI_OT_GenshinImportModel(Operator, ImportHelper, CustomOperatorProperties)
             bpy.ops.import_scene.fbx(
                 filepath=character_model_file_path,
                 force_connect_children=True,
-                automatic_bone_orientation=True
+                automatic_bone_orientation=False
             )
             self.report({'INFO'}, 'Imported character model')
 

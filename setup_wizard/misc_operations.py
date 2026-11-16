@@ -5,7 +5,7 @@ import bpy
 from bpy.types import Material, Operator
 
 from setup_wizard.domain.game_types import GameType
-from setup_wizard.domain.shader_identifier_service import GenshinImpactShaders, HonkaiStarRailShaders, ShaderIdentifierService, ShaderIdentifierServiceFactory
+from setup_wizard.domain.shader_identifier_service import HonkaiStarRailShaders, ShaderIdentifierService, ShaderIdentifierServiceFactory
 from setup_wizard.domain.shader_material_names import JaredNytsPunishingGrayRavenShaderMaterialNames, Nya222HonkaiStarRailShaderMaterialNames, ShaderMaterialNames, StellarToonShaderMaterialNames
 from setup_wizard.import_order import NextStepInvoker
 from setup_wizard.setup_wizard_operator_base_classes import CustomOperatorProperties
@@ -19,6 +19,8 @@ class GI_OT_SetColorManagementToStandard(Operator, CustomOperatorProperties):
 
     def execute(self, context):
         bpy.context.scene.view_settings.view_transform = 'Standard'
+        bpy.context.scene.eevee.use_ssr = True
+        bpy.context.scene.eevee.use_ssr_refraction = True
 
         if self.next_step_idx:
             NextStepInvoker().invoke(
@@ -39,8 +41,7 @@ class HYV_OT_SetUpScreenSpaceReflections(Operator, CustomOperatorProperties):
         shader_identifier_service = ShaderIdentifierServiceFactory.create(self.game_type)
         shader = shader_identifier_service.identify_shader(bpy.data.materials, bpy.data.node_groups)
 
-        if shader is HonkaiStarRailShaders.STELLARTOON_HONKAI_STAR_RAIL_SHADER or \
-            (self.game_type == GameType.GENSHIN_IMPACT.name and shader.value >= GenshinImpactShaders.V1_HOYOTOON_GENSHIN_IMPACT_SHADER.value):
+        if shader is HonkaiStarRailShaders.STELLARTOON_HONKAI_STAR_RAIL_SHADER:
             bpy.context.scene.eevee.use_ssr = True
             bpy.context.scene.eevee.use_ssr_refraction = True
 
@@ -391,6 +392,7 @@ class PGR_OT_PaintFaceShadowTexture(Operator, CustomOperatorProperties):
             modifiers = [modifier for modifier in mesh.modifiers.values() if 'Outlines' in modifier.name]
             for modifier in modifiers:
                 modifier.show_viewport = False
+        
 
         # 1. Select the face mesh
         # 2. Go to Edit Mode

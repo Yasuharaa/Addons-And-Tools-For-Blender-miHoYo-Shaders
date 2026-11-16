@@ -512,10 +512,9 @@ def rig_character(
     except:
         pass
     x = original_name.split("_")
-    if len(x) > 1:
-        bpy.data.objects["rigify"].users_collection[0].name = x[-2]
-        bpy.data.objects["rigify"].name = x[-2] + "Rig"
-    
+    bpy.data.objects["rigify"].users_collection[0].name = x[-2]
+    bpy.data.objects["rigify"].name = x[-2] + "Rig"
+
 try:
     bpy.context.scene.objects["Head Forward"].hide_viewport = True
     bpy.context.scene.objects["Head Up"].hide_viewport = True
@@ -532,13 +531,13 @@ for obj in lis:
         pass
 
 
-def use_bone_collections():
+def is_blender_version_4_0():
     version_tuple = bpy.app.version
-    return version_tuple[0] >= 4
+    return version_tuple[0] == 4 and version_tuple[1] == 0
 
 
 def assign_bone_to_bone_collection(armature, armature_obj, bone, collection_name, collection_idx):
-    if use_bone_collections():
+    if is_blender_version_4_0():
         clothes_bone_collection = armature.collections.get(collection_name) if \
             armature.collections.get(collection_name) else armature.collections.new(collection_name)
         clothes_bone_collection.assign(bone)
@@ -548,7 +547,7 @@ def assign_bone_to_bone_collection(armature, armature_obj, bone, collection_name
 
 
 def unassign_bone_from_bone_collection(armature, armature_obj, bone, collection_name, collection_idx_range):
-    if use_bone_collections():
+    if is_blender_version_4_0():
         clothes_bone_collection = armature.collections.get(collection_name) if \
             armature.collections.get(collection_name) else armature.collections.new(collection_name)
         clothes_bone_collection.unassign(bone)
@@ -558,7 +557,7 @@ def unassign_bone_from_bone_collection(armature, armature_obj, bone, collection_
 
 
 def assign_root_bone_to_bone_collection(armature, bone, collection_name, collection_idx):
-    if use_bone_collections():
+    if is_blender_version_4_0():
         root_bone_collection = armature.collections.get(collection_name) if \
             armature.collections.get(collection_name) else armature.collections.new(collection_name)
         if root_bone_collection:

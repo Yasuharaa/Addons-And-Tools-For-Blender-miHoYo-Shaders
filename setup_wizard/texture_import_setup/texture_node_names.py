@@ -4,9 +4,6 @@
 class TextureNodeNames:
     DIFFUSE = ''
     BODY_DIFFUSE_UV0 = ''
-    BODY_DIFFUSE_UV1 = ''
-    BODY_LIGHTMAP_UV0 = ''
-    BODY_LIGHTMAP_UV1 = ''
     MAIN_DIFFUSE = ''
     LIGHTMAP = ''
     SHADER_TEXTURES_NODE_GROUP = ''
@@ -16,6 +13,7 @@ class TextureNodeNames:
     VFX_DIFFUSE = ''
     FACE_SHADOW_MAP = ''  # GI/PGR
     FACE_SHADOW_MAP_NODE_GROUP = ''
+    EYE_MASK = ''
     # HSR
     STOCKINGS_BODY1_NODE_GROUP = ''
     STOCKINGS_BODY2_NODE_GROUP = ''
@@ -58,9 +56,6 @@ class TextureNodeNames:
 
 class GenshinImpactTextureNodeNames(TextureNodeNames):
     BODY_DIFFUSE_UV0 = 'Body_Diffuse_UV0'  # For getting body shader name when renaming shader material names
-    BODY_DIFFUSE_UV1 = 'Body_Diffuse_UV1'
-    BODY_LIGHTMAP_UV0 = 'Body_Lightmap_UV0'
-    BODY_LIGHTMAP_UV1 = 'Body_Lightmap_UV1'
 
 class V1_GenshinImpactTextureNodeNames(GenshinImpactTextureNodeNames):
     LIGHTMAP = 'Image Texture'
@@ -77,7 +72,7 @@ class V3_GenshinImpactTextureNodeNames(V2_GenshinImpactTextureNodeNames):
     FACE_LIGHTMAP_NODE_GROUP = ''
     FACE_SHADOW_MAP = ''
 
-class V1_HoYoToonGenshinImpactTextureNodeNames(V3_GenshinImpactTextureNodeNames):
+class V4_GenshinImpactTextureNodeNames(V3_GenshinImpactTextureNodeNames):
     SHADER_TEXTURES_NODE_GROUP = 'Shader Textures'
     DIFFUSE = 'Main_Diffuse'
     MAIN_DIFFUSE = DIFFUSE  # For getting body shader name when renaming shader material names
@@ -90,6 +85,7 @@ class V1_HoYoToonGenshinImpactTextureNodeNames(V3_GenshinImpactTextureNodeNames)
     NIGHT_SOUL_MASK = 'Main_NYXmask'
     FACE_NIGHT_SOUL_MASK = 'Face_NYXmask'
     VFX_DIFFUSE = 'VFX_Diffuse'
+    EYE_MASK = 'Face_Mask'
 
 
 class Nya222HonkaiStarRailTextureNodeNames(TextureNodeNames):
@@ -108,6 +104,10 @@ class Nya222HonkaiStarRailTextureNodeNames(TextureNodeNames):
     FACE_EXPRESSION_MAP = '画像テクスチャ.001'
     WEAPON_RAMP_NODE_GROUP = 'Weapon_Ramp'  # From bpy.data.node_groups, not the node name in material
     WEAPON_RAMP = 'Image Texture.002'
+    NORMALMAP = None
+    MATCAP = None
+    MATCAPMASK = None
+    GLINTMASK = None
 
 '''
 All "NODE_GROUP"s below are from bpy.data.node_groups and not the node name in material
@@ -120,6 +120,10 @@ class StellarToonTextureNodeNames(TextureNodeNames):
     LIGHTMAP_UV0_SUFFIX = '_Lightmap_UV0'
     LIGHTMAP_UV1_SUFFIX = '_Lightmap_UV1'
     STOCKINGS = 'Body_Stockings'
+    MATCAP = 'Body_Matcap'
+    MATCAPMASK = 'Body_MatcapMask'
+    NORMALMAP = 'Body_Normalmap'
+    GLINTMASK = 'Body_GlintMask'
 
     FACE_COLOR_SUFFIX = '_Color'
     FACE_EXPRESSION_MAP = 'ExpressionMap'

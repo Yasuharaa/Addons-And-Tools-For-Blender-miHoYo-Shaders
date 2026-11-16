@@ -1,0 +1,16 @@
+{
+    "last_check": "2026-01-31 11:41:29.842703",
+    "backup_date": "",
+    "update_ready": true,
+    "ignore": false,
+    "just_restored": false,
+    "just_updated": false,
+    "version_text": {
+        "link": "https://github.com/michael-gh1/Addons-And-Tools-For-Blender-miHoYo-Shaders/releases/download/v2.7.1/Character_Setup_Wizard_Addon_v2.7.1.zip",
+        "version": [
+            2,
+            7,
+            1
+        ]
+    }
+}

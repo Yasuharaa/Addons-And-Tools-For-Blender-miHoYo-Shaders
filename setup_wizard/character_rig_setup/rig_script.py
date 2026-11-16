@@ -2,15 +2,13 @@
 # Setup Wizard Integration by michael-gh1
 
 import bpy
-import addon_utils   
-import re          
-
+import os
 from mathutils import Color, Vector
 from math import pi
+import addon_utils   
+import re             
 
-from setup_wizard.domain.decorators import preserve_context
 from setup_wizard.geometry_nodes_setup.lighting_panel_names import LightingPanelNames
-
 
 def rig_character(
         file_path,
@@ -31,8 +29,6 @@ def rig_character(
                
     head_bone_arm_target = bpy.context.active_object
     temp_armature = head_bone_arm_target.data
-
-    armature_object = bpy.context.object
 
     bpy.ops.object.mode_set(mode='EDIT')
 
@@ -345,6 +341,7 @@ def rig_character(
         '+Breast L A01': 'breast.L',
         '+Breast R A01': 'breast.R', 
     }
+
     if kachina:
         # Only add Kachina thumb/fingers if it's Kachina
         # There is the potential to clash and have duplicate bone names with other characters (like Wriotheseley)
@@ -723,6 +720,23 @@ def rig_character(
             except:
                 pass
 
+    # Symmetrize clothes/hair bones for HSRigs, which have a different naming convention
+    bpy.ops.object.mode_set(mode='EDIT')
+    eb = rigifyr.data.edit_bones
+    for bone in eb:
+        if "L_" in bone.name: # Finds clothes/hair bones with symmetrical bones
+            try:
+                y = bone.name.find('L_')  # Finds index of "HairL_1"
+                orgname = bone.name
+                newname = orgname[:y] + "_" + orgname[y+2:]  # newname = "Hair_1
+                oppbone = orgname[:y] + "R_" + orgname[y+2:] # oppbone = "HairR_1"
+                bone.name = newname + ".L"    # Renames bone to _L format
+                eb[oppbone].name = newname + ".R"   # Renames opposite bone to _R format
+                if (round(bone.head[0], 3) == round(-eb[newname+".R"].head[0], 3)): # Not every bone with a symmetrical name is actually *physically* symmetrical. This checks to make sure that they are.
+                    eb[newname+".R"].roll = -bone.roll   # Symmetrizes rolls
+            except:
+                pass
+
     rigifyr.pose.bones["upper_arm_parent.L"]["pole_parent"] = 2
     rigifyr.pose.bones["upper_arm_parent.R"]["pole_parent"] = 2
     rigifyr.pose.bones["thigh_parent.L"]["pole_parent"] = 2
@@ -777,6 +791,8 @@ def rig_character(
         for bone in bones_list:
             if "Hair" in bone.name:
                 rigifyr.pose.bones[bone.name].bone.select = True
+            elif "Bone_Hair" in bone.name:
+                rigifyr.pose.bones[bone.name].bone.select = True
         bpy.ops.pose.selection_set_add()
         bpy.ops.pose.selection_set_assign()
         bpy.ops.pose.select_all(action='DESELECT')
@@ -784,6 +800,8 @@ def rig_character(
         ## Clothes
         for bone in bones_list:
             if "Amice" in bone.name or ("fk" not in bone.name and "tweak" not in bone.name and "Twist" not in bone.name and "Hair" not in bone.name and (bone.name[-1].isdigit() or bone.name[-3].isdigit())):
+                rigifyr.pose.bones[bone.name].bone.select = True
+            elif "Bone_" in bone.name or ("fk" not in bone.name and "tweak" not in bone.name and "Twist" not in bone.name and "Hair" not in bone.name and (bone.name[-1].isdigit() or bone.name[-3].isdigit())):
                 rigifyr.pose.bones[bone.name].bone.select = True
         bpy.ops.pose.selection_set_add()
         bpy.ops.pose.selection_set_assign()
@@ -849,12 +867,10 @@ def rig_character(
     except:
         pass
 
-    fix_forearm_twist_bones(armature_object)
-
     # POST RIGIFY SCRIPT EXECUTION ----------------->
 
     # Delete metarig
-    bpy.data.objects.remove(bpy.data.objects['metarig'])
+    # bpy.data.objects.remove(bpy.data.objects['metarig'])
 
     # Moves specified param and it's children into the collection
     def move_into_collection(object,collection,include_children=True):
@@ -1025,10 +1041,18 @@ def rig_character(
     
     bpy.ops.wm.append(filename='append_Props', directory=path_to_file)
 
+    # this_obj = None
+    # for obj in bpy.data.objects:
+    #     if "Rig" in obj.name:
+    #         this_obj = obj
     this_obj = None
     for obj in bpy.data.objects:
-        if "Rig" in obj.name:
+        if obj.type == 'ARMATURE' and obj.name.endswith("Rig"):
             this_obj = obj
+            break
+
+    if this_obj is None:
+        raise RuntimeError("Armature '<NamaKarakter>Rig' tidak ditemukan")
 
     this_obj.pose.bones["root"].custom_shape = bpy.data.objects["root plate.002"]
     this_obj.pose.bones["root"].use_custom_shape_bone_size = False
@@ -2037,15 +2061,38 @@ def rig_character(
         depsgraph = bpy.context.evaluated_depsgraph_get()
         depsgraph.update()
 
-
-    all_meshes = [obj for obj in bpy.data.objects if obj.type == 'MESH']
-    for mesh in all_meshes:
-        outlines_geometry_node_modifiers = [modifier for modifier in mesh.modifiers if modifier.type == 'NODES' and "Outlines " in modifier.name]
-        for modifier in outlines_geometry_node_modifiers:
-            try:
-                setup_viewport_outlines(modifier)
-            except:
-                pass
+    try:
+        setup_viewport_outlines(bpy.data.objects["Body"].modifiers["Outlines Body"])
+    except:
+        pass
+    try:
+        setup_viewport_outlines(bpy.data.objects["Hair"].modifiers["Outlines Hair"])
+    except:
+        pass
+    try:
+        setup_viewport_outlines(bpy.data.objects["Hair.001"].modifiers["Outlines Hair.001"]) # Escoffier? Who else  
+    except:
+        pass
+    try:
+        setup_viewport_outlines(bpy.data.objects["Face"].modifiers["Outlines Face"])
+    except:
+        pass
+    try:
+        setup_viewport_outlines(bpy.data.objects["Dress"].modifiers["Outlines Dress"])
+    except:
+        pass
+    try:
+        setup_viewport_outlines(bpy.data.objects["Pupil"].modifiers["Outlines Pupil"])
+    except:
+        pass
+    try:
+        setup_viewport_outlines(bpy.data.objects["Bang"].modifiers["Outlines Bang"])
+    except:
+        pass
+    try:
+        setup_viewport_outlines(bpy.data.objects["EyeStar"].modifiers["Outlines EyeStar"])
+    except:
+        pass
 
     # handled list of face SK
     handled_sks = ['Basis', 'Mouth_Default', 'Mouth_A01', 'Mouth_Open01', 'Mouth_Smile01', 'Mouth_Smile02', 'Mouth_Angry01', 'Mouth_Angry02',
@@ -2770,7 +2817,7 @@ def rig_character(
         collections.new("Leg.L (FK)")
         collections.new("Leg.R (FK)")
         collections.new("Root")
-        collections.new("Hair")
+        collections.new("Physics")
         collections.new("Clothes")
         collections.new("Cage")
         if lighting_panel_rig_obj:
@@ -3066,9 +3113,9 @@ def rig_character(
                 # Hair and Clothes
                 "\n            split = row.split(factor=split_small, align=True)" +
                 "\n            row_tweaks = split.row(align=True)" +
-                "\n            " + make_layer_str("Hair", 20, vers, "tweaks") + 
+                "\n            " + make_layer_str("Physics", 20, vers, "tweaks") + 
                 "\n            row_tweaks = split.row(align=True)" +
-                "\n            " + make_solo_str("Hair", "tweaks") +
+                "\n            " + make_solo_str("Physics", "tweaks") +
                 "\n            split = row.split(factor=split_small, align=True)" +
                 "\n            row_pivots = split.row(align=True)" +
                 "\n            " + make_layer_str("Clothes", 21, vers, "pivots") + 
@@ -3289,7 +3336,7 @@ def rig_character(
         bpy.context.object.data.collections["Arm.R (FK)"].is_visible = False
         bpy.context.object.data.collections["Leg.L (FK)"].is_visible = False
         bpy.context.object.data.collections["Leg.R (FK)"].is_visible = False
-        bpy.context.object.data.collections["Hair"].is_visible = False
+        bpy.context.object.data.collections["Physics"].is_visible = False
         bpy.context.object.data.collections["Clothes"].is_visible = False
         bpy.context.object.data.collections["Cage"].is_visible = False
         bpy.context.object.data.collections["Other"].is_visible = False
@@ -3339,7 +3386,8 @@ def rig_character(
     bone_to_layer("foot_ik_pivot.R", 19, "Pivots & Pins") 
     
     # MOVING FACE
-    bone_to_layer("plate-settings", 0, "Face")        
+    bone_to_layer("plate-settings", 0, "Face")
+    bone_to_layer("plate-settings", 28, "Root") #duplicate for root layer so we can access it from the root layer as well, tired of switching layers to get to it.       
     bone_to_layer("plate-border", 0, "Face")        
     bone_to_layer("Plate", 0, "Face")        
     bone_to_layer("eyetrack", 0, "Face")
@@ -3505,7 +3553,9 @@ def rig_character(
             bone_to_layer(bone, layer, collection)
     
     # Refactoring old bone move functionalities
-    list_move_to_other = ["+UpperArmTwistA02.L","+UpperArmTwistA01.L","+UpperArmTwistA01.R","+UpperArmTwistA02.R","eye.R","eye.L","+ToothBone D A01","+ToothBone U A01","+ToothBone A A01"]
+    list_move_to_other = ["+UpperArmTwistA02.L","+UpperArmTwistA01.L","+UpperArmTwistA01.R","+UpperArmTwistA02.R",
+                          "eye.R","eye.L","+ToothBone D A01","+ToothBone U A01","+ToothBone A A01", "Bone_PelvisTwist01_M", 
+                          "Bone_ForearmTwistA01_L", "Bone_ForearmTwistA01_R"]
     fast_bone_move(list_move_to_other, 25, "Other")
     
     if toe_bones_exist:
@@ -3596,8 +3646,8 @@ def rig_character(
     bone_to_layer("foot_fk.R",17,"Leg.R (FK)")
     bone_to_layer("toe_fk.R",17,"Leg.R (FK)")
     
-    bone_to_layer("breast.L",22,"Clothes")
-    bone_to_layer("breast.R",22,"Clothes")
+    bone_to_layer("breast.L",22,"Physics")
+    bone_to_layer("breast.R",22,"Physics")
     
     bone_to_layer("prop.L",21,"Props")
     bone_to_layer("prop.R",21,"Props")
@@ -3636,8 +3686,59 @@ def rig_character(
             "+ForearmTwistSA01.R",
             "+ForearmTwistSA01.L",
             "+ThighTwistSA01.R",
-            "+ThighTwistSA01.L"
+            "+ThighTwistSA01.L",
+            "Bone_ShoulderA01_R",
+            "Bone_ShoulderA01_L",
+            "Bone_ElbowA01_R",
+            "Bone_ElbowA01_L",
+            "Bone_KneeA01_R",
+            "Bone_KneeA01_L",
+            "Bone_ForearmTwistA01_R",
+            "Bone_ForearmTwistA01_L",
+            "Bone_ForearmTwist01_L", #aino
+            "Bone_ForearmTwist01_R",
+            "Bone_PelvisTwist01_M",
+            "Bone_Neck01_M",
+            "Bone_Spine1Twist01_M",
+            "Bone_SpineTwist01_M",
+            "Bone_SpineTwist02_M",
+            "Bone_SpineA01_M",
+            "Bone_TwistCalf01_L",
+            "Bone_TwistCalf01_R",
+            "Bone_Twist_Neck01_M",
+            "Bone_NeckA01_M",
+            "Bone_Spine01_M",
+            "Bone_ElbowA02_R",
+            "Bone_ElbowA02_L",
+            "Bone_Knee01_L", #aino
+            "Bone_Knee01_R",
+            "Bone_KneeA02_L", #7.0
+            "Bone_KneeA02_R",
+            "Bone_ThighTwist01_L", #ineffa
+            "Bone_ThighTwist01_R",
+            "+UpThighTwistSA01.L", #danica 7.1
+            "+UpThighTwistSA01.R",
+            "+FlycloakRootB CB A01", #for wings glider (unused)
         ]
+
+        #HSR Rigs
+        # Separates bones into their respective collections/layers
+        clothes_list = ["Ribbon", "Sleeve", "Strap", "Skirt", "Button", "Belt", "Cloth", "Earring",
+                "Cuff", "Flower", "Part", "Headwear", "Cloak", "Shoelace", "Hat", "Butterfly", "Butt", 
+                "Cape", "Apron", "Glove", "Scarf", "Jacket", "Coat", "Armband", "Accessory", "Tie", "Garter",
+                "Sheeve", "Leaf"]
+        hair_list = ["Hair", "Eardrop", "Bang"]
+        # weird face bones
+        face_list = ["mouth", "orbit", "lip", "eye", "socket", "brow", "nose", "chhek", "jaw", "tongue"]
+        facebn_list = ["mouth", "orbit", "lip", "eye", "socket", "brow", "nose", "chhek", "jaw", "tongue"]
+        weapon_list = ["Weapon", "Bow", "Sword"]
+        weird_list = ["JNT"]
+        clothes_prefixes = tuple(clothes_list)
+        hair_prefixes = tuple(hair_list)
+        face_prefixes = tuple(face_list)
+        facebn_prefixes = tuple(facebn_list)
+        weapon_prefixes = tuple(weapon_list)
+        weird_prefixes = tuple(weird_list)
 
         if is_version_4:
             armature = bpy.context.object.data
@@ -3645,20 +3746,65 @@ def rig_character(
             
             for bone in armature.bones:
                 # The gods of the universe have blessed us with every physics bone starting with "+". We just do some extra filtering and we got what we need.
-                if "+Hair" in bone.name:
-                    bone_to_layer(bone.name,20,"Hair")
+                if bone.name.startswith("+") and "hair" in bone.name.lower():
+                    bone_to_layer(bone.name, 20, "Physics")
+
                 elif bone.name[0] == "+" and bone.name not in ignore_list:
-                    bone_to_layer(bone.name,22,"Clothes")
+                    bone_to_layer(bone.name, 22,"Clothes")
+
+                elif bone.name.startswith("Bone_") and bone.name not in ignore_list:
+                    bone_to_layer(bone.name, 20, "Physics") #genshin 7.0
+
+                elif bone.name.startswith("Skn_") and bone.name not in ignore_list:
+                    bone_to_layer(bone.name, 20, "Physics") #zzz
+
+                elif bone.name.startswith("Sp_") and bone.name not in ignore_list:
+                    bone_to_layer(bone.name, 20, "Physics") #umamusume
+                
+                elif bone.name.startswith("Bn_") and bone.name not in ignore_list:
+                    bone_to_layer(bone.name, 20, "Physics") #forgot, other games
+
+                elif (bone.name.startswith(("+", "Hair")) or "JNT" in bone.name) \
+                    and bone.name.startswith(hair_prefixes):
+                    bone_to_layer(bone.name, 20, "Physics") #HSR Rigs
+
+                elif (bone.name.startswith("+") or "JNT" in bone.name) \
+                    and bone.name.startswith(clothes_prefixes):
+                    bone_to_layer(bone.name, 22, "Clothes") #HSR Rigs
+
                 elif bone.name in ignore_list:
-                    bone_to_layer(bone.name,25,"Other")
+                    bone_to_layer(bone.name, 25, "Other")
+
         else:
             for bone in bpy.context.active_object.pose.bones:
-                if "+Hair" in bone.name:
-                    bone_to_layer(bone.name,20,"Hair")
+                if bone.name.startswith("+") and "hair" in bone.name.lower():
+                    bone_to_layer(bone.name, 20, "Physics")
+
                 elif bone.name[0] == "+" and bone.name not in ignore_list:
-                    bone_to_layer(bone.name,22,"Clothes")
+                    bone_to_layer(bone.name, 22,"Clothes")
+
+                elif bone.name.startswith("Bone_") and bone.name not in ignore_list:
+                    bone_to_layer(bone.name, 20, "Physics") #genshin 7.0
+
+                elif bone.name.startswith("Skn_") and bone.name not in ignore_list:
+                    bone_to_layer(bone.name, 20, "Physics") #zzz
+
+                elif bone.name.startswith("Sp_") and bone.name not in ignore_list:
+                    bone_to_layer(bone.name, 20, "Physics") #umamusume
+
+                elif bone.name.startswith("Bn_") and bone.name not in ignore_list:
+                    bone_to_layer(bone.name, 20, "Physics") #forgot, other games
+
+                elif (bone.name.startswith(("+", "Hair")) or "JNT" in bone.name) \
+                    and stripped.startswith(hair_prefixes):
+                    bone_to_layer(bone.name, 20, "Physics") #HSR Rigs
+
+                elif (bone.name.startswith("+") or "JNT" in bone.name) \
+                    and stripped.startswith(clothes_prefixes):
+                    bone_to_layer(bone.name, 22, "Clothes") #HSR Rigs
+
                 elif bone.name in ignore_list:
-                    bone_to_layer(bone.name,25,"Other")
+                    bone_to_layer(bone.name, 25, "Other")
 
     loop_place_physics()
     
@@ -3735,35 +3881,3 @@ def disable_collection(collection_name):
 def move_collection_into_collection(source, destination, collection):  
     destination.children.link(collection)
     source.children.unlink(collection)
-
-
-# Original fix script from Poke/Enthralpy
-# https://discord.com/channels/1058394128171405312/1125469354436337755/1411816380164214865
-@preserve_context
-def fix_forearm_twist_bones(armature_object):
-    bpy.context.view_layer.objects.active = armature_object
-    bpy.ops.object.mode_set(mode='POSE')
-
-    arm_twists = {
-        "DEF-hand.L": "+ForearmArmTwistSA01.L", 
-        "DEF-hand.R": "+ForearmArmTwistSA01.R", 
-        "DEF-forearm.L": "+UpperArmTwistA02.L", 
-        "DEF-forearm.R": "+UpperArmTwistA02.R",
-    }
-
-    for rigify_bone in arm_twists:
-        try:
-            arm_twist_bone = armature_object.pose.bones[arm_twists[rigify_bone]]
-        except KeyError: # not every bone has twist bones
-            continue
-        con = arm_twist_bone.constraints.new('COPY_ROTATION')
-        con.target = armature_object
-        con.subtarget = rigify_bone
-
-        # Enable only Y axis
-        con.use_x = False
-        con.use_z = False
-
-        # Set spaces
-        con.target_space = 'LOCAL'
-        con.owner_space = 'LOCAL'

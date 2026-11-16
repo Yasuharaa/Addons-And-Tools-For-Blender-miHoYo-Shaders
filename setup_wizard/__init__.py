@@ -3,7 +3,7 @@ import os
 bl_info = {
     "name": "HoYoverse Setup Wizard",
     "author": "Mken, OctavoPE, Enthralpy",
-    "version": (2, 7, 4),
+    "version": (2, 7, 0),
     "blender": (3, 3, 0),
     "location": "3D View > Sidebar > Genshin Impact / Honkai Star Rail / Punishing Gray Raven",
     "description": "An addon to streamline the character model setup process when using Festivity, Nya222's or JaredNyts' Shaders",
@@ -65,6 +65,7 @@ else:
         HSR_PT_UI_Finish_Setup_Menu, \
         HSR_PT_UI_Character_Rig_Setup_Menu
         # HSR_PT_UI_Compositing_Panel_Post_Processing_UI_Layout
+        
     from setup_wizard.ui.pgr_ui_setup_wizard_menu import \
         PGR_PT_Setup_Wizard_UI_Layout, \
         PGR_PT_Basic_Setup_Wizard_UI_Layout, \

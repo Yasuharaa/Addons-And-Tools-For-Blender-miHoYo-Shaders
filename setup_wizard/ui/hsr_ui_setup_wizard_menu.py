@@ -30,7 +30,7 @@ class HSR_PT_Setup_Wizard_UI_Layout(Panel, HonkaiStarRailUIRenderChecker):
         OperatorFactory.create_betterfbx_required_ui(run_entire_setup_column)
 
         expy_kit_installed = bpy.context.preferences.addons.get('Expy-Kit-main')
-        betterfbx_installed = bpy.context.preferences.addons.get('better_fbx')
+        betterfbx_installed = bpy.context.preferences.addons.get('better_fbx') or bpy.context.preferences.addons.get('bl_ext.user_default.better_fbx')
         rigify_installed = bpy.context.preferences.addons.get('rigify')
 
         if not expy_kit_installed or not betterfbx_installed or not rigify_installed:
@@ -376,19 +376,12 @@ class OperatorFactory:
         operator_context='EXEC_DEFAULT',
         **kwargs
     ):
-        try:
-            ui_object.operator_context = operator_context
-            ui_object = ui_object.operator(
-                operator=operator,
-                text=text,
-                icon=icon,
-            )
-        except TypeError:  # Icon not found, possibly added/removed depending on Blender version
-            ui_object.operator_context = operator_context
-            ui_object = ui_object.operator(
-                operator=operator,
-                text=text,
-            )
+        ui_object.operator_context = operator_context
+        ui_object = ui_object.operator(
+            operator=operator,
+            text=text,
+            icon=icon,
+        )
 
         for key, value in kwargs.items():
             setattr(ui_object, key, value)
@@ -397,7 +390,7 @@ class OperatorFactory:
     def create_betterfbx_required_ui(
         ui_object: UILayout,
     ):
-        betterfbx_installed = bpy.context.preferences.addons.get('better_fbx')
+        betterfbx_installed = bpy.context.preferences.addons.get('better_fbx') or bpy.context.preferences.addons.get('bl_ext.user_default.better_fbx')
         if not betterfbx_installed:
             ui_object.column()
             ui_object.enabled = False
@@ -408,7 +401,7 @@ class OperatorFactory:
         ui_object: UILayout,
     ):
         expy_kit_installed = bpy.context.preferences.addons.get('Expy-Kit-main')
-        betterfbx_installed = bpy.context.preferences.addons.get('better_fbx')
+        betterfbx_installed = bpy.context.preferences.addons.get('better_fbx') or bpy.context.preferences.addons.get('bl_ext.user_default.better_fbx')
         rigify_installed = bpy.context.preferences.addons.get('rigify')
 
         column = ui_object.column()
